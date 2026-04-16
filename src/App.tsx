@@ -850,6 +850,7 @@ const ShoppingPage = ({
 };
 
 const InfoPage = () => {
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const emergencyContacts = [
     { name: "警察局 (Police)", number: "110", icon: "👮" },
     { name: "救護車/火警 (Ambulance/Fire)", number: "119", icon: "🚑" },
@@ -925,20 +926,35 @@ const InfoPage = () => {
           <h3 className="text-[10px] font-black uppercase tracking-wider">系統狀態</h3>
         </div>
         <div className="text-[10px] font-bold text-slate-400 space-y-1">
-          <p>版本更新時間: 2026-04-16 12:00</p>
+          <p>版本更新時間: 2026-04-16 12:10</p>
           <p>儲存狀態: 已啟用 (LocalStorage)</p>
         </div>
-        <button 
-          onClick={() => {
-            if(window.confirm("確定要清除所有儲存的資料嗎？")) {
-              localStorage.clear();
-              window.location.reload();
-            }
-          }}
-          className="w-full bg-red-50 text-red-400 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest border border-red-100 active:scale-[0.98] transition-all"
-        >
-          清除所有資料 (Reset)
-        </button>
+        {!showResetConfirm ? (
+          <button 
+            onClick={() => setShowResetConfirm(true)}
+            className="w-full bg-red-50 text-red-400 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest border border-red-100 active:scale-[0.98] transition-all"
+          >
+            清除所有資料 (Reset)
+          </button>
+        ) : (
+          <div className="flex gap-2">
+            <button 
+              onClick={() => {
+                localStorage.clear();
+                window.location.reload();
+              }}
+              className="flex-1 bg-red-500 text-white py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest active:scale-[0.98] transition-all"
+            >
+              確認清除
+            </button>
+            <button 
+              onClick={() => setShowResetConfirm(false)}
+              className="flex-1 bg-slate-100 text-slate-500 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest active:scale-[0.98] transition-all"
+            >
+              取消
+            </button>
+          </div>
+        )}
       </section>
     </div>
   );
@@ -986,19 +1002,35 @@ export default function App() {
 
   // Save to localStorage whenever data changes
   useEffect(() => {
-    localStorage.setItem('fukuoka_expenses_v2', JSON.stringify(expenses));
+    try {
+      localStorage.setItem('fukuoka_expenses_v2', JSON.stringify(expenses));
+    } catch (e) {
+      console.error("Save error", e);
+    }
   }, [expenses]);
 
   useEffect(() => {
-    localStorage.setItem('fukuoka_shopping_v2', JSON.stringify(shoppingItems));
+    try {
+      localStorage.setItem('fukuoka_shopping_v2', JSON.stringify(shoppingItems));
+    } catch (e) {
+      console.error("Save error", e);
+    }
   }, [shoppingItems]);
 
   useEffect(() => {
-    localStorage.setItem('fukuoka_active_tab_v2', activeTab);
+    try {
+      localStorage.setItem('fukuoka_active_tab_v2', activeTab);
+    } catch (e) {
+      console.error("Save error", e);
+    }
   }, [activeTab]);
 
   useEffect(() => {
-    localStorage.setItem('fukuoka_active_day_v2', activeDay.toString());
+    try {
+      localStorage.setItem('fukuoka_active_day_v2', activeDay.toString());
+    } catch (e) {
+      console.error("Save error", e);
+    }
   }, [activeDay]);
 
   useEffect(() => {
@@ -1012,7 +1044,7 @@ export default function App() {
     };
   }, [selectedAttraction, isAddingBudget]);
 
-  const currentDay = ITINERARY_DATA[activeDay];
+  const currentDay = ITINERARY_DATA[activeDay] || ITINERARY_DATA[0];
 
   return (
     <div className="min-h-screen bg-[#FFFAF0] font-sans text-slate-800 flex flex-col relative">
