@@ -967,8 +967,8 @@ const InfoPage = () => {
           <h3 className="text-[10px] font-black uppercase tracking-wider">系統狀態</h3>
         </div>
         <div className="text-[10px] font-bold text-slate-400 space-y-1">
-          <p>版本更新時間: 2026-04-16 12:25 (DEBUG)</p>
-          <p>儲存狀態: {storageStatus}</p>
+          <p>系統版本: 2026.04.16.v3 (Stable)</p>
+          <p>資料儲存: {storageStatus}</p>
         </div>
         {!showResetConfirm ? (
           <button 
