@@ -17,7 +17,8 @@ import {
   ShoppingBag,
   Map as MapIcon,
   CheckCircle2,
-  Circle
+  Circle,
+  Settings
 } from "lucide-react";
 
 // --- Types ---
@@ -916,6 +917,29 @@ const InfoPage = () => {
           ))}
         </div>
       </section>
+
+      {/* System Status Section */}
+      <section className="bg-white/60 backdrop-blur-md p-6 rounded-[32px] border border-white/40 shadow-sm space-y-4">
+        <div className="flex items-center gap-2 text-slate-500">
+          <Settings className="w-5 h-5" />
+          <h3 className="text-[10px] font-black uppercase tracking-wider">系統狀態</h3>
+        </div>
+        <div className="text-[10px] font-bold text-slate-400 space-y-1">
+          <p>版本更新時間: 2026-04-16 12:00</p>
+          <p>儲存狀態: 已啟用 (LocalStorage)</p>
+        </div>
+        <button 
+          onClick={() => {
+            if(window.confirm("確定要清除所有儲存的資料嗎？")) {
+              localStorage.clear();
+              window.location.reload();
+            }
+          }}
+          className="w-full bg-red-50 text-red-400 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest border border-red-100 active:scale-[0.98] transition-all"
+        >
+          清除所有資料 (Reset)
+        </button>
+      </section>
     </div>
   );
 };
@@ -923,69 +947,59 @@ const InfoPage = () => {
 export default function App() {
   // --- Persistent UI State ---
   const [activeTab, setActiveTab] = useState<'itinerary' | 'budget' | 'shopping' | 'info'>(() => {
-    return (localStorage.getItem('fukuoka_active_tab') as any) || 'itinerary';
+    try {
+      return (localStorage.getItem('fukuoka_active_tab_v2') as any) || 'itinerary';
+    } catch {
+      return 'itinerary';
+    }
   });
   const [activeDay, setActiveDay] = useState(() => {
-    const saved = localStorage.getItem('fukuoka_active_day');
-    return saved ? parseInt(saved, 10) : 0;
+    try {
+      const saved = localStorage.getItem('fukuoka_active_day_v2');
+      return saved ? parseInt(saved, 10) : 0;
+    } catch {
+      return 0;
+    }
   });
 
   const [selectedAttraction, setSelectedAttraction] = useState<Attraction | null>(null);
   const [isAddingBudget, setIsAddingBudget] = useState(false);
 
   // --- Persistent Data State ---
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [shoppingItems, setShoppingItems] = useState<ShoppingItem[]>([]);
-  const [isDataLoaded, setIsDataLoaded] = useState(false);
-
-  // 1. Initial Load - Run only once
-  useEffect(() => {
+  const [expenses, setExpenses] = useState<Expense[]>(() => {
     try {
-      const savedExpenses = localStorage.getItem('fukuoka_expenses_v2');
-      const savedShopping = localStorage.getItem('fukuoka_shopping_v2');
-      const savedTab = localStorage.getItem('fukuoka_active_tab_v2');
-      const savedDay = localStorage.getItem('fukuoka_active_day_v2');
-
-      if (savedExpenses) {
-        const parsed = JSON.parse(savedExpenses);
-        setExpenses(parsed);
-        console.log("Loaded expenses:", parsed.length);
-      }
-      if (savedShopping) {
-        const parsed = JSON.parse(savedShopping);
-        setShoppingItems(parsed);
-        console.log("Loaded shopping items:", parsed.length);
-      }
-      if (savedTab) setActiveTab(savedTab as any);
-      if (savedDay) setActiveDay(parseInt(savedDay, 10));
-      
-      setIsDataLoaded(true);
-    } catch (e) {
-      console.error("Failed to load data from localStorage", e);
-      setIsDataLoaded(true);
+      const saved = localStorage.getItem('fukuoka_expenses_v2');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
     }
-  }, []);
+  });
 
-  // 2. Save on changes - Only after initial load is complete
+  const [shoppingItems, setShoppingItems] = useState<ShoppingItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('fukuoka_shopping_v2');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Save to localStorage whenever data changes
   useEffect(() => {
-    if (!isDataLoaded) return;
     localStorage.setItem('fukuoka_expenses_v2', JSON.stringify(expenses));
-  }, [expenses, isDataLoaded]);
+  }, [expenses]);
 
   useEffect(() => {
-    if (!isDataLoaded) return;
     localStorage.setItem('fukuoka_shopping_v2', JSON.stringify(shoppingItems));
-  }, [shoppingItems, isDataLoaded]);
+  }, [shoppingItems]);
 
   useEffect(() => {
-    if (!isDataLoaded) return;
     localStorage.setItem('fukuoka_active_tab_v2', activeTab);
-  }, [activeTab, isDataLoaded]);
+  }, [activeTab]);
 
   useEffect(() => {
-    if (!isDataLoaded) return;
     localStorage.setItem('fukuoka_active_day_v2', activeDay.toString());
-  }, [activeDay, isDataLoaded]);
+  }, [activeDay]);
 
   useEffect(() => {
     if (selectedAttraction || isAddingBudget) {
