@@ -1,16 +1,17 @@
 {
-  "name": "福岡旅遊 2026",
-  "short_name": "福岡行程",
-  "start_url": "/FUK/", 
-  "scope": "/FUK/",
+  "name": "Fukuoka Travel 2026",
+  "short_name": "Fukuoka Trip",
+  "description": "Travel Itinerary and Expense Tracker for Fukuoka Trip",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#FFFAF0",
-  "theme_color": "#f1c40f",
+  "theme_color": "#bbdfff",
   "icons": [
     {
       "src": "https://cdn-icons-png.flaticon.com/512/826/826070.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }

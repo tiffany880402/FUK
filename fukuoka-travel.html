@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Fukuoka Travel 2026 - Ultimate Compatible Edition</title>
+    <title>Fukuoka Travel 2026 - Final Complete Edition</title>
     
     <!-- PWA Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
-    <!-- 基礎庫：使用 UMD 版本以確保本地開啟相容性 -->
+    <!-- 基礎庫載入 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -25,6 +25,7 @@
             padding: 0;
             color: #1e293b;
             -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden;
         }
 
         .glass {
@@ -49,9 +50,6 @@
         }
         .modal-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
-        .safe-pb { padding-bottom: 120px; }
-        
-        /* 載入中動畫 */
         #loading-screen {
             position: fixed;
             inset: 0;
@@ -77,7 +75,7 @@
 <body>
     <div id="loading-screen">
         <div class="spinner"></div>
-        <p style="margin-top: 16px; font-weight: 900; color: #5A86C2; font-size: 14px;">LOADING FUKUOKA...</p>
+        <p style="margin-top: 16px; font-weight: 900; color: #5A86C2; font-size: 14px;">同步所有行程與資料...</p>
     </div>
 
     <div id="root"></div>
@@ -85,7 +83,7 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
 
-        // --- 內建 SVG 圖示 (零依賴) ---
+        // --- 內建 SVG 圖示 ---
         const Icon = {
             Calendar: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>,
             Wallet: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>,
@@ -101,12 +99,13 @@
             ChevronRight: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
         };
 
-        // --- 行程資料 ---
+        // --- 完整行程資料 (5天份) ---
         const ITINERARY_DATA = [
             {
                 date: "4/17", day: "Day 1: 福岡天神首航", weather: { temp: "18°C / 12°C", condition: "晴時多雲", icon: "☀️" },
                 attractions: [
                     { time: "14:40", name: "桃園TPE ➡️ 福岡FUK (CI128)", duration: "2h 25m", description: "搭乘中華航空 CI128 班機。18:05 抵達福岡。", type: 'flight' },
+                    { time: "18:05", name: "抵達福岡機場", duration: "1 小時", description: "搭乘接駁巴士前往地鐵站 ➡️ 轉乘機場線至天神站。", image: "https://d1grca2t3zpuug.cloudfront.net/2025/10/fukuokaairport_cover-870x500-1759925994.webp" },
                     { time: "19:30", name: "飯店 Check-in", duration: "30 min", description: "入住 QUINTESSA 福岡天神 Comic & Books。", type: 'hotel', image: "https://q-xx.bstatic.com/xdata/images/hotel/max500/284226582.jpg?k=53722a659e2b23ea3a9dc5e16bacb538d655839122790a0df93484178003d07d&o=" },
                     { time: "20:30", name: "天神晚餐時光", duration: "2 小時", description: "天神地區人氣美食推薦。", type: 'dinner', image: "https://resources.matcha-jp.com/resize/720x2000/2024/04/23-177958.webp",
                       subItems: [
@@ -219,10 +218,15 @@
             const [activeDay, setActiveDay] = useState(0);
             const [selectedAttraction, setSelectedAttraction] = useState(null);
             
-            // --- 記帳功能 ---
+            // --- 核心資料狀態 (統一管理) ---
             const [expenses, setExpenses] = useState(() => {
-                try { return JSON.parse(localStorage.getItem('fukuoka_v5_exp') || '[]'); } catch(e) { return []; }
+                try { return JSON.parse(localStorage.getItem('fukuoka_safe_exp') || '[]'); } catch(e) { return []; }
             });
+            const [shoppingItems, setShoppingItems] = useState(() => {
+                try { return JSON.parse(localStorage.getItem('fukuoka_safe_shop') || '[]'); } catch(e) { return []; }
+            });
+
+            // --- 記帳 UI 狀態 ---
             const [isAddingBudget, setIsAddingBudget] = useState(false);
             const [newItem, setNewItem] = useState("");
             const [newAmount, setNewAmount] = useState("");
@@ -231,30 +235,44 @@
             const [displayCurrency, setDisplayCurrency] = useState('TWD');
             const rate = 0.21;
 
-            useEffect(() => localStorage.setItem('fukuoka_v5_exp', JSON.stringify(expenses)), [expenses]);
+            // --- 購物 UI 狀態 ---
+            const [newShopItem, setNewShopItem] = useState("");
 
+            // --- 資料持久化 (變動即存) ---
+            useEffect(() => {
+                localStorage.setItem('fukuoka_safe_exp', JSON.stringify(expenses));
+            }, [expenses]);
+
+            useEffect(() => {
+                localStorage.setItem('fukuoka_safe_shop', JSON.stringify(shoppingItems));
+            }, [shoppingItems]);
+
+            // --- 記帳邏輯 ---
             const addExpense = () => {
                 if (!newItem || !newAmount) return;
                 const jpy = newCurrency === 'TWD' ? parseFloat(newAmount) / rate : parseFloat(newAmount);
-                setExpenses([{ id: Date.now(), item: newItem, amount: jpy, method: paymentMethod, date: new Date().toLocaleDateString() }, ...expenses]);
+                const newExp = { id: Date.now(), item: newItem, amount: jpy, method: paymentMethod, date: new Date().toLocaleDateString() };
+                setExpenses(prev => [newExp, ...prev]);
                 setNewItem(""); setNewAmount(""); setIsAddingBudget(false);
             };
 
-            const deleteExpense = (id) => setExpenses(expenses.filter(e => e.id !== id));
+            const deleteExpense = (id) => setExpenses(prev => prev.filter(e => e.id !== id));
             const totalJPY = expenses.reduce((a, b) => a + b.amount, 0);
 
-            // --- 購物清單 ---
-            const [shoppingItems, setShoppingItems] = useState(() => {
-                try { return JSON.parse(localStorage.getItem('fukuoka_v5_shop') || '[]'); } catch(e) { return []; }
-            });
-            const [newShopItem, setNewShopItem] = useState("");
-
-            useEffect(() => localStorage.setItem('fukuoka_v5_shop', JSON.stringify(shoppingItems)), [shoppingItems]);
-
+            // --- 購物邏輯 ---
             const addShopItem = () => {
                 if (!newShopItem) return;
-                setShoppingItems([{ id: Date.now(), name: newShopItem, bought: false }, ...shoppingItems]);
+                const newItem = { id: Date.now(), name: newShopItem, bought: false };
+                setShoppingItems(prev => [newItem, ...prev]);
                 setNewShopItem("");
+            };
+
+            const toggleShopItem = (id) => {
+                setShoppingItems(prev => prev.map(item => item.id === id ? {...item, bought: !item.bought} : item));
+            };
+
+            const deleteShopItem = (id) => {
+                setShoppingItems(prev => prev.filter(item => item.id !== id));
             };
 
             // 關閉載入畫面
@@ -268,11 +286,13 @@
                 }
             }, []);
 
+            const currentDay = ITINERARY_DATA[activeDay];
+
             return (
                 <div className="min-h-screen max-w-md mx-auto relative pb-32">
                     {/* 行程頁面 */}
                     {activeTab === 'itinerary' && (
-                        <div>
+                        <div className="animate-fade-in">
                             <div className="h-52 w-full relative">
                                 <img src="https://www.wendyjourney.com/wp-content/uploads/2025/05/Fukuoka.jpg" className="w-full h-full object-cover" />
                                 <div className="absolute inset-0 bg-gradient-to-t from-[#FFFAF0] to-transparent" />
@@ -287,27 +307,26 @@
                                     ))}
                                 </div>
                                 <div className="glass p-4 rounded-2xl flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-2xl">{ITINERARY_DATA[activeDay].weather.icon}</span>
-                                        <div>
-                                            <div className="text-[10px] font-black text-[#5A86C2] uppercase">{ITINERARY_DATA[activeDay].weather.condition}</div>
-                                            <div className="text-[10px] font-bold text-slate-400">{ITINERARY_DATA[activeDay].weather.temp}</div>
-                                        </div>
+                                    <div className="flex items-center gap-4">
+                                        <span className="text-3xl">{currentDay.weather.icon}</span>
+                                        <div><div className="text-xs font-black text-[#5A86C2]">{currentDay.weather.condition}</div><div className="text-xs font-bold text-slate-400">{currentDay.weather.temp}</div></div>
                                     </div>
                                 </div>
-                                <h2 className="text-sm font-black text-slate-800 border-l-4 border-[#ffdda5] pl-3 mb-4">{ITINERARY_DATA[activeDay].day}</h2>
-                                {ITINERARY_DATA[activeDay].attractions.map((item, idx) => (
-                                    <div key={idx} onClick={() => setSelectedAttraction(item)} className="cursor-pointer">
-                                        <Card item={item} />
-                                    </div>
-                                ))}
+                                <h2 className="text-sm font-black text-slate-800 border-l-4 border-[#ffdda5] pl-3">{currentDay.day}</h2>
+                                <div className="space-y-4">
+                                    {currentDay.attractions.map((item, idx) => (
+                                        <div key={idx} onClick={() => item.type !== 'flight' && setSelectedAttraction(item)} className={item.type !== 'flight' ? "cursor-pointer" : ""}>
+                                            <Card item={item} />
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     )}
 
                     {/* 記帳頁面 */}
                     {activeTab === 'budget' && (
-                        <div className="p-6 pt-10 space-y-6">
+                        <div className="p-6 pt-10 space-y-6 animate-fade-in">
                             <h2 className="text-xl font-black text-slate-800">旅費管理</h2>
                             <div className="bg-white p-10 rounded-[40px] shadow-sm text-center border border-white relative">
                                 <button onClick={() => setDisplayCurrency(displayCurrency === 'TWD' ? 'JPY' : 'TWD')} className="bg-[#bbdfff]/40 px-4 py-1.5 rounded-full text-[10px] font-black text-[#5A86C2] mb-4 uppercase tracking-widest flex items-center gap-2 mx-auto"><Icon.Refresh /> 切換幣別 ({displayCurrency})</button>
@@ -322,16 +341,10 @@
                                         <div key={exp.id} className="bg-white p-4 rounded-2xl flex justify-between items-center shadow-sm border border-white">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-lg">{exp.method === 'cash' ? '💵' : '💳'}</div>
-                                                <div>
-                                                    <div className="text-sm font-black text-slate-800">{exp.item}</div>
-                                                    <div className="text-[9px] text-slate-400 font-bold uppercase">{exp.date}</div>
-                                                </div>
+                                                <div><div className="text-sm font-black">{exp.item}</div><div className="text-[9px] font-bold text-slate-400">{exp.date}</div></div>
                                             </div>
                                             <div className="flex items-center gap-4">
-                                                <div className="text-right">
-                                                    <div className="text-sm font-black text-slate-700">¥{exp.amount.toLocaleString()}</div>
-                                                    <div className="text-[9px] text-slate-400 font-bold">$ {(exp.amount * rate).toLocaleString(undefined, {maximumFractionDigits:0})}</div>
-                                                </div>
+                                                <div className="text-right"><div className="text-sm font-black">¥{exp.amount.toLocaleString()}</div><div className="text-[9px] font-bold text-slate-400">$ {(exp.amount * rate).toLocaleString(undefined, {maximumFractionDigits:0})}</div></div>
                                                 <button onClick={() => deleteExpense(exp.id)} className="text-slate-200 hover:text-red-400"><Icon.Trash /></button>
                                             </div>
                                         </div>
@@ -343,7 +356,7 @@
 
                     {/* 購物清單 */}
                     {activeTab === 'shopping' && (
-                        <div className="p-6 pt-10 space-y-6">
+                        <div className="p-6 pt-10 space-y-6 animate-fade-in">
                             <h2 className="text-xl font-black text-slate-800">購物清單</h2>
                             <div className="bg-white p-6 rounded-3xl border border-white shadow-sm">
                                 <div className="flex gap-2 mb-6">
@@ -354,12 +367,12 @@
                                     {shoppingItems.map(item => (
                                         <div key={item.id} className={`flex items-center justify-between p-4 rounded-2xl border ${item.bought ? 'bg-slate-50 opacity-60' : 'bg-white shadow-sm'}`}>
                                             <div className="flex items-center gap-3">
-                                                <button onClick={() => setShoppingItems(shoppingItems.map(i => i.id === item.id ? {...i, bought: !i.bought} : i))} className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${item.bought ? 'bg-[#5A86C2] border-[#5A86C2] text-white' : 'border-slate-200'}`}>
-                                                    {item.bought && <Icon.Check />}
+                                                <button onClick={() => toggleShopItem(item.id)}>
+                                                    {item.bought ? <Icon.Check className="text-[#5A86C2]" /> : <div className="w-5 h-5 border-2 border-slate-200 rounded-full" />}
                                                 </button>
-                                                <span className={`text-sm font-bold ${item.bought ? 'line-through text-slate-400' : 'text-slate-700'}`}>{item.name}</span>
+                                                <span className={`text-sm font-bold ${item.bought ? 'line-through text-slate-400' : 'text-slate-800'}`}>{item.name}</span>
                                             </div>
-                                            <button onClick={() => setShoppingItems(shoppingItems.filter(i => i.id !== item.id))} className="text-slate-200 hover:text-red-400"><Icon.Trash /></button>
+                                            <button onClick={() => deleteShopItem(item.id)} className="text-slate-200 hover:text-red-400"><Icon.Trash /></button>
                                         </div>
                                     ))}
                                 </div>
@@ -369,7 +382,7 @@
 
                     {/* 資訊頁面 */}
                     {activeTab === 'info' && (
-                        <div className="p-6 pt-10 space-y-6">
+                        <div className="p-6 pt-10 space-y-6 animate-fade-in">
                             <h2 className="text-xl font-black text-slate-800">實用資訊</h2>
                             <div className="bg-white p-6 rounded-[32px] border border-white shadow-sm space-y-4">
                                 <textarea placeholder="輸入中文或日文..." className="w-full bg-slate-50 rounded-2xl p-4 text-sm min-h-[120px] outline-none" />
@@ -413,7 +426,7 @@
                                                 </div>
                                             ))}
                                         </div>
-                                    ) : <p className="text-sm text-slate-500 mt-4 leading-relaxed">{selectedAttraction.description}</p>}
+                                    ) : <p className="text-sm text-slate-600 mt-4 leading-relaxed">{selectedAttraction.description}</p>}
                                     <button onClick={() => setSelectedAttraction(null)} className="w-full mt-8 bg-slate-100 py-4 rounded-2xl font-black text-slate-500">關閉</button>
                                 </div>
                             </div>

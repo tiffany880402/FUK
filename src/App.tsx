@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { 
   MapPin, 
@@ -490,8 +490,17 @@ const AttractionCard = ({ item }: { item: Attraction }) => {
   );
 };
 
-const BudgetPage = ({ isAdding, setIsAdding }: { isAdding: boolean, setIsAdding: (v: boolean) => void }) => {
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+const BudgetPage = ({ 
+  isAdding, 
+  setIsAdding, 
+  expenses, 
+  setExpenses 
+}: { 
+  isAdding: boolean, 
+  setIsAdding: (v: boolean) => void,
+  expenses: Expense[],
+  setExpenses: React.Dispatch<React.SetStateAction<Expense[]>>
+}) => {
   const [newItem, setNewItem] = useState("");
   const [newAmount, setNewAmount] = useState("");
   const [newCurrency, setNewCurrency] = useState<'JPY' | 'TWD'>('JPY');
@@ -757,8 +766,13 @@ const BudgetPage = ({ isAdding, setIsAdding }: { isAdding: boolean, setIsAdding:
   );
 };
 
-const ShoppingPage = () => {
-  const [items, setItems] = useState<ShoppingItem[]>([]);
+const ShoppingPage = ({
+  items,
+  setItems
+}: {
+  items: ShoppingItem[],
+  setItems: React.Dispatch<React.SetStateAction<ShoppingItem[]>>
+}) => {
   const [newName, setNewName] = useState("");
   const [newStore, setNewStore] = useState("");
 
@@ -904,6 +918,34 @@ export default function App() {
   const [selectedAttraction, setSelectedAttraction] = useState<Attraction | null>(null);
   const [isAddingBudget, setIsAddingBudget] = useState(false);
 
+  // --- Persistent State ---
+  const [expenses, setExpenses] = useState<Expense[]>(() => {
+    try {
+      const saved = localStorage.getItem('fukuoka_expenses');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const [shoppingItems, setShoppingItems] = useState<ShoppingItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('fukuoka_shopping');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  // Save to localStorage whenever data changes
+  useEffect(() => {
+    localStorage.setItem('fukuoka_expenses', JSON.stringify(expenses));
+  }, [expenses]);
+
+  useEffect(() => {
+    localStorage.setItem('fukuoka_shopping', JSON.stringify(shoppingItems));
+  }, [shoppingItems]);
+
   useEffect(() => {
     if (selectedAttraction || isAddingBudget) {
       document.body.style.overflow = 'hidden';
@@ -994,8 +1036,20 @@ export default function App() {
 
         {(activeTab === 'budget' || activeTab === 'shopping' || activeTab === 'info') && (
           <div className="max-w-4xl mx-auto p-4 md:p-8 pt-8">
-            {activeTab === 'budget' && <BudgetPage isAdding={isAddingBudget} setIsAdding={setIsAddingBudget} />}
-            {activeTab === 'shopping' && <ShoppingPage />}
+            {activeTab === 'budget' && (
+              <BudgetPage 
+                isAdding={isAddingBudget} 
+                setIsAdding={setIsAddingBudget} 
+                expenses={expenses}
+                setExpenses={setExpenses}
+              />
+            )}
+            {activeTab === 'shopping' && (
+              <ShoppingPage 
+                items={shoppingItems}
+                setItems={setShoppingItems}
+              />
+            )}
             {activeTab === 'info' && <InfoPage />}
           </div>
         )}
