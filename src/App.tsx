@@ -941,20 +941,27 @@ export default function App() {
   // 1. Initial Load - Run only once
   useEffect(() => {
     try {
-      const savedExpenses = localStorage.getItem('fukuoka_expenses');
-      const savedShopping = localStorage.getItem('fukuoka_shopping');
-      const savedTab = localStorage.getItem('fukuoka_active_tab');
-      const savedDay = localStorage.getItem('fukuoka_active_day');
+      const savedExpenses = localStorage.getItem('fukuoka_expenses_v2');
+      const savedShopping = localStorage.getItem('fukuoka_shopping_v2');
+      const savedTab = localStorage.getItem('fukuoka_active_tab_v2');
+      const savedDay = localStorage.getItem('fukuoka_active_day_v2');
 
-      if (savedExpenses) setExpenses(JSON.parse(savedExpenses));
-      if (savedShopping) setShoppingItems(JSON.parse(savedShopping));
+      if (savedExpenses) {
+        const parsed = JSON.parse(savedExpenses);
+        setExpenses(parsed);
+        console.log("Loaded expenses:", parsed.length);
+      }
+      if (savedShopping) {
+        const parsed = JSON.parse(savedShopping);
+        setShoppingItems(parsed);
+        console.log("Loaded shopping items:", parsed.length);
+      }
       if (savedTab) setActiveTab(savedTab as any);
       if (savedDay) setActiveDay(parseInt(savedDay, 10));
       
-      console.log("Data loaded from localStorage");
       setIsDataLoaded(true);
     } catch (e) {
-      console.error("Failed to load data", e);
+      console.error("Failed to load data from localStorage", e);
       setIsDataLoaded(true);
     }
   }, []);
@@ -962,22 +969,22 @@ export default function App() {
   // 2. Save on changes - Only after initial load is complete
   useEffect(() => {
     if (!isDataLoaded) return;
-    localStorage.setItem('fukuoka_expenses', JSON.stringify(expenses));
+    localStorage.setItem('fukuoka_expenses_v2', JSON.stringify(expenses));
   }, [expenses, isDataLoaded]);
 
   useEffect(() => {
     if (!isDataLoaded) return;
-    localStorage.setItem('fukuoka_shopping', JSON.stringify(shoppingItems));
+    localStorage.setItem('fukuoka_shopping_v2', JSON.stringify(shoppingItems));
   }, [shoppingItems, isDataLoaded]);
 
   useEffect(() => {
     if (!isDataLoaded) return;
-    localStorage.setItem('fukuoka_active_tab', activeTab);
+    localStorage.setItem('fukuoka_active_tab_v2', activeTab);
   }, [activeTab, isDataLoaded]);
 
   useEffect(() => {
     if (!isDataLoaded) return;
-    localStorage.setItem('fukuoka_active_day', activeDay.toString());
+    localStorage.setItem('fukuoka_active_day_v2', activeDay.toString());
   }, [activeDay, isDataLoaded]);
 
   useEffect(() => {
