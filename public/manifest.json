@@ -1,0 +1,17 @@
+{
+  "name": "Fukuoka Travel 2026",
+  "short_name": "Fukuoka Trip",
+  "description": "Travel Itinerary and Expense Tracker for Fukuoka Trip",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFAF0",
+  "theme_color": "#bbdfff",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/826/826070.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

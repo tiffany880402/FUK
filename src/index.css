@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "PingFang TC", "Microsoft JhengHei", "Helvetica Neue", Arial, sans-serif;
+  --color-bg: #f0f9ff;
+  --color-accent-blue: #0ea5e9;
+  --color-sky-light: #e0f2fe;
+  --color-ink-black: #1e293b;
+  --color-ticket-blue: #1e3a8a;
+  --shadow-card: 0 10px 30px rgba(14, 165, 233, 0.08);
+}
+
+@layer base {
+  html {
+    scrollbar-gutter: stable;
+  }
+  body {
+    @apply bg-bg text-ink-black font-sans;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
