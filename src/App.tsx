@@ -849,7 +849,6 @@ const ShoppingPage = ({
 };
 
 const InfoPage = () => {
-  const [text, setText] = useState("");
   const emergencyContacts = [
     { name: "警察局 (Police)", number: "110", icon: "👮" },
     { name: "救護車/火警 (Ambulance/Fire)", number: "119", icon: "🚑" },
@@ -861,24 +860,33 @@ const InfoPage = () => {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-32">
       <div className="flex items-center gap-2 border-l-4 border-[#ffdda5] pl-3 mb-2">
-        <h2 className="text-base font-black text-slate-800 uppercase tracking-widest">Translation & Info</h2>
+        <h2 className="text-base font-black text-slate-800 uppercase tracking-widest">Maps & Info</h2>
       </div>
 
-      {/* Translation Section */}
+      {/* Google Maps Section */}
       <section className="bg-white/60 backdrop-blur-md p-6 rounded-[32px] border border-white/40 shadow-sm space-y-4">
         <div className="flex items-center gap-2 text-[#5A86C2]">
-          <Flower2 className="w-5 h-5" />
-          <h3 className="text-[10px] font-black uppercase tracking-wider">即時翻譯</h3>
+          <Navigation className="w-5 h-5" />
+          <h3 className="text-[10px] font-black uppercase tracking-wider">地圖導航</h3>
         </div>
-        <textarea 
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="輸入中文或日文..."
-          className="w-full bg-slate-50/50 border-none rounded-2xl p-4 text-sm min-h-[120px] focus:ring-2 focus:ring-[#bbdfff] transition-all"
-        />
-        <button className="w-full bg-[#bbdfff] text-slate-700 py-4 rounded-2xl font-black text-sm shadow-sm active:scale-[0.98] transition-all flex items-center justify-center gap-2">
-          <RefreshCw className="w-4 h-4" /> 翻譯 (Gemini AI)
-        </button>
+        <div className="relative h-32 w-full rounded-2xl overflow-hidden mb-2">
+          <img 
+            src="https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?q=80&w=800&auto=format&fit=crop" 
+            alt="Map Preview" 
+            className="w-full h-full object-cover opacity-80"
+          />
+          <div className="absolute inset-0 flex items-center justify-center bg-black/10">
+            <MapPin className="w-8 h-8 text-white drop-shadow-lg" />
+          </div>
+        </div>
+        <a 
+          href="https://www.google.com/maps/search/?api=1&query=Fukuoka"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full bg-[#bbdfff] text-slate-700 py-4 rounded-2xl font-black text-sm shadow-sm active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+        >
+          <Navigation className="w-4 h-4" /> 開啟 Google 地圖 (福岡)
+        </a>
       </section>
 
       {/* Emergency Contacts */}
