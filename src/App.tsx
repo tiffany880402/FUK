@@ -913,12 +913,19 @@ const InfoPage = () => {
 };
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'itinerary' | 'budget' | 'shopping' | 'info'>('itinerary');
-  const [activeDay, setActiveDay] = useState(0);
+  // --- Persistent UI State ---
+  const [activeTab, setActiveTab] = useState<'itinerary' | 'budget' | 'shopping' | 'info'>(() => {
+    return (localStorage.getItem('fukuoka_active_tab') as any) || 'itinerary';
+  });
+  const [activeDay, setActiveDay] = useState(() => {
+    const saved = localStorage.getItem('fukuoka_active_day');
+    return saved ? parseInt(saved, 10) : 0;
+  });
+
   const [selectedAttraction, setSelectedAttraction] = useState<Attraction | null>(null);
   const [isAddingBudget, setIsAddingBudget] = useState(false);
 
-  // --- Persistent State ---
+  // --- Persistent Data State ---
   const [expenses, setExpenses] = useState<Expense[]>(() => {
     try {
       const saved = localStorage.getItem('fukuoka_expenses');
@@ -937,7 +944,15 @@ export default function App() {
     }
   });
 
-  // Save to localStorage whenever data changes
+  // Save everything whenever it changes
+  useEffect(() => {
+    localStorage.setItem('fukuoka_active_tab', activeTab);
+  }, [activeTab]);
+
+  useEffect(() => {
+    localStorage.setItem('fukuoka_active_day', activeDay.toString());
+  }, [activeDay]);
+
   useEffect(() => {
     localStorage.setItem('fukuoka_expenses', JSON.stringify(expenses));
   }, [expenses]);
