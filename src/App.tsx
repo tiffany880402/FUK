@@ -21,6 +21,36 @@ import {
   Settings
 } from "lucide-react";
 
+// --- Storage Utility ---
+const safeStorage = {
+  getItem: (key: string) => {
+    try {
+      return typeof window !== 'undefined' ? window.localStorage.getItem(key) : null;
+    } catch (e) {
+      console.warn("Storage access denied", e);
+      return null;
+    }
+  },
+  setItem: (key: string, value: string) => {
+    try {
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(key, value);
+        return true;
+      }
+    } catch (e) {
+      console.warn("Storage write failed", e);
+    }
+    return false;
+  },
+  clear: () => {
+    try {
+      if (typeof window !== 'undefined') window.localStorage.clear();
+    } catch (e) {
+      console.warn("Storage clear failed", e);
+    }
+  }
+};
+
 // --- Types ---
 interface Attraction {
   time: string;
@@ -851,6 +881,17 @@ const ShoppingPage = ({
 
 const InfoPage = () => {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [storageStatus, setStorageStatus] = useState<string>("Checking...");
+
+  useEffect(() => {
+    const testKey = "__storage_test__";
+    if (safeStorage.setItem(testKey, "ok")) {
+      setStorageStatus("正常 (Working)");
+    } else {
+      setStorageStatus("受限 (Blocked/Full)");
+    }
+  }, []);
+
   const emergencyContacts = [
     { name: "警察局 (Police)", number: "110", icon: "👮" },
     { name: "救護車/火警 (Ambulance/Fire)", number: "119", icon: "🚑" },
@@ -926,8 +967,8 @@ const InfoPage = () => {
           <h3 className="text-[10px] font-black uppercase tracking-wider">系統狀態</h3>
         </div>
         <div className="text-[10px] font-bold text-slate-400 space-y-1">
-          <p>版本更新時間: 2026-04-16 12:10</p>
-          <p>儲存狀態: 已啟用 (LocalStorage)</p>
+          <p>版本更新時間: 2026-04-16 12:25 (DEBUG)</p>
+          <p>儲存狀態: {storageStatus}</p>
         </div>
         {!showResetConfirm ? (
           <button 
@@ -940,7 +981,7 @@ const InfoPage = () => {
           <div className="flex gap-2">
             <button 
               onClick={() => {
-                localStorage.clear();
+                safeStorage.clear();
                 window.location.reload();
               }}
               className="flex-1 bg-red-500 text-white py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest active:scale-[0.98] transition-all"
@@ -963,38 +1004,34 @@ const InfoPage = () => {
 export default function App() {
   // --- Persistent UI State ---
   const [activeTab, setActiveTab] = useState<'itinerary' | 'budget' | 'shopping' | 'info'>(() => {
-    try {
-      return (localStorage.getItem('fukuoka_active_tab_v2') as any) || 'itinerary';
-    } catch {
-      return 'itinerary';
-    }
+    const saved = safeStorage.getItem('fukuoka_active_tab_v2');
+    return (saved as any) || 'itinerary';
   });
   const [activeDay, setActiveDay] = useState(() => {
-    try {
-      const saved = localStorage.getItem('fukuoka_active_day_v2');
-      return saved ? parseInt(saved, 10) : 0;
-    } catch {
-      return 0;
-    }
+    const saved = safeStorage.getItem('fukuoka_active_day_v2');
+    return saved ? parseInt(saved, 10) : 0;
   });
 
   const [selectedAttraction, setSelectedAttraction] = useState<Attraction | null>(null);
   const [isAddingBudget, setIsAddingBudget] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   // --- Persistent Data State ---
   const [expenses, setExpenses] = useState<Expense[]>(() => {
+    const saved = safeStorage.getItem('fukuoka_expenses_v2');
+    if (!saved) return [];
     try {
-      const saved = localStorage.getItem('fukuoka_expenses_v2');
-      return saved ? JSON.parse(saved) : [];
+      return JSON.parse(saved);
     } catch {
       return [];
     }
   });
 
   const [shoppingItems, setShoppingItems] = useState<ShoppingItem[]>(() => {
+    const saved = safeStorage.getItem('fukuoka_shopping_v2');
+    if (!saved) return [];
     try {
-      const saved = localStorage.getItem('fukuoka_shopping_v2');
-      return saved ? JSON.parse(saved) : [];
+      return JSON.parse(saved);
     } catch {
       return [];
     }
@@ -1002,35 +1039,19 @@ export default function App() {
 
   // Save to localStorage whenever data changes
   useEffect(() => {
-    try {
-      localStorage.setItem('fukuoka_expenses_v2', JSON.stringify(expenses));
-    } catch (e) {
-      console.error("Save error", e);
-    }
+    safeStorage.setItem('fukuoka_expenses_v2', JSON.stringify(expenses));
   }, [expenses]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('fukuoka_shopping_v2', JSON.stringify(shoppingItems));
-    } catch (e) {
-      console.error("Save error", e);
-    }
+    safeStorage.setItem('fukuoka_shopping_v2', JSON.stringify(shoppingItems));
   }, [shoppingItems]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('fukuoka_active_tab_v2', activeTab);
-    } catch (e) {
-      console.error("Save error", e);
-    }
+    safeStorage.setItem('fukuoka_active_tab_v2', activeTab);
   }, [activeTab]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('fukuoka_active_day_v2', activeDay.toString());
-    } catch (e) {
-      console.error("Save error", e);
-    }
+    safeStorage.setItem('fukuoka_active_day_v2', activeDay.toString());
   }, [activeDay]);
 
   useEffect(() => {
